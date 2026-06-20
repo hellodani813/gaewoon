@@ -9,7 +9,7 @@ st.set_page_config(
 )
 
 st.title("개운중학교 생기부 작성 도우미")
-st.write("모든 기능이 항상 활성화되어 있는 2026학년도 안정화 버전입니다.")
+st.write("실시간으로 맞춤법과 띄어쓰기 검사 가능합니다")
 
 FORBIDDEN_WORDS = [
     "토익", "TOEIC", "토플", "TOEFL", "텝스", "TEPS", "오픽", "OPIc", "HSK", "JLPT", "인증시험", "한자검정",
