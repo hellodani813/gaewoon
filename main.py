@@ -17,7 +17,7 @@ st.markdown("""
     .sub-title { font-size: 15px; color: #4B5563; margin-bottom: 25px; }
     .stTabs [data-baseweb="tab"] { font-size: 16px; font-weight: bold; }
     </style>
-""", unsafe-allow_html=True)
+""", unsafe_allow_html=True)
 
 st.markdown('<div class="main-title">🏫 2026학년도 개운중학교 생기부 기재 도우미</div>', unsafe-allow_html=True)
 st.markdown('<div class="sub-title">전경원 선생님들의 안전하고 정확한 학교생활기록부 작성을 위한 점검 툴입니다.</div>', unsafe-allow_html=True)
