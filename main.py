@@ -20,7 +20,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.markdown('<div class="main-title">🏫 2026학년도 개운중학교 생기부 기재 도우미</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-title">전경원 선생님들의 안전하고 정확한 학교생활기록부 작성을 위한 점검 툴입니다.</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title">선생님들의 안전하고 정확한 학교생활기록부 작성을 위한 점검 툴입니다.</div>', unsafe_allow_html=True)
 
 # 2026 개운중 기재요령 기준 금지어 데이터베이스 구성
 FORBIDDEN_WORDS = [
