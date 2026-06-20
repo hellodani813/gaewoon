@@ -11,7 +11,6 @@ st.set_page_config(
 st.title("🏫 개운중학교 생기부 작성 도우미")
 st.write("외부 서버 통신 없이 100% 내부 엔진으로 구동되어 오류가 없는 안전한 버전입니다.")
 
-# 1. 생기부 기재 금지어 데이터베이스
 FORBIDDEN_WORDS = [
     "토익", "TOEIC", "토플", "TOEFL", "텝스", "TEPS", "오픽", "OPIc", "HSK", "JLPT", "인증시험", "한자검정",
     "대회", "경시", "올림피아드", "시상", "수상경력", "교외상", "표창장", "감사장", "공로상",
@@ -22,14 +21,12 @@ FORBIDDEN_WORDS = [
     "자격증", "취득", "방과후학교"
 ]
 
-# 2. 나이스 자주 틀리는 맞춤법 사전
 SPELL_CHECK_DICT = {
     "바램": "바람", "할수 ": "할 수 ", "잇음": "있음", "가르켰": "가르쳤", "치루": "치르",
     "마추어": "맞추어", "돗보임": "돋보임", "연계 하여": "연계하여", "참여 하여": "참여하여",
     "조사 하여": "조사하여", "분석 하여": "분석하여", "생각 함": "생각함", "안음": "않음"
 }
 
-# 3. 내장형 고속 도서 검증 데이터베이스 (중학교 최다 빈출 도서 목록 수록)
 BOOK_DATABASE = [
     {"title": "재밌어서 밤새는 화학 이야기", "author": "사마키 다케오", "isbn": "9788964472316", "pub": "더숲"},
     {"title": "정재승의 과학 콘서트", "author": "정재승", "isbn": "9788937434501", "pub": "어크로스"},
@@ -85,16 +82,22 @@ with tab1:
         final_csv = st.session_state.student_df.to_csv(index=False).encode('utf-8-sig')
         st.download_button("최종 작성 파일 다운로드", data=final_csv, file_name="gaeun_records.csv", mime="text/csv")
 
-# --- TAB 2: 내장 데이터베이스 고속 검색 (네트워크 끊겨도 작동) ---
+# --- TAB 2: 오류가 절대 없는 안전한 도서 조회 인터페이스 ---
 with tab2:
-    st.subheader("📚 내장 데이터베이스 기반 ISBN 고속 검증")
-    st.info("💡 과학동아, 뉴턴(Newton) 같은 정기 간행물은 ISSN 체계이므로 생기부 입력이 절대 불가합니다.")
+    st.subheader("📚 도서 ISBN 검증 및 나이스 양식 변환")
+    st.info("💡 과학동아, 뉴턴(Newton) 같은 정기 간행물은 ISSN 체계이므로 생기부 입력이 절대 불가하며, ISBN 단행본만 가능합니다.")
     
-    book_query = st.text_input("조회할 도서명 또는 저자명을 입력하세요 (예: 과학 콘서트, 화학 이야기, 코스모스 등):")
+    # [보완 기능] 국립중앙도서관 정식 조회 사이트 링크 연동 버튼
+    st.markdown("### 🔍 공식 서지정보(ISBN) 확인 사이트")
+    st.write("가장 정확한 등재 여부는 대한민국 공식 도서관 시스템에서 실시간으로 확인할 수 있습니다.")
+    st.link_button("🌐 국립중앙도서관 서지정보 시스템 바로가기", "https://seoji.nl.go.kr/landingPage")
+    
+    st.write("---")
+    st.markdown("### 📝 도서명 입력 및 서식 변환")
+    book_query = st.text_input("조회하거나 변환할 도서명 또는 저자명을 입력하세요:")
     
     if book_query:
         results = []
-        # 대소문자 구분 없이 입력어 포함 여부 확인
         for book in BOOK_DATABASE:
             if book_query.lower() in book["title"].lower() or book_query.lower() in book["author"].lower():
                 nice_format = f"{book['title']}({book['author']})"
@@ -108,15 +111,11 @@ with tab2:
             st.success(f"🔍 내부 데이터베이스에서 ISBN 정보 검증에 성공했습니다!")
             st.dataframe(pd.DataFrame(results), use_container_width=True)
         else:
-            # DB에 없는 새로운 책일 경우 예외 처리 가이드라인 표출
-            st.warning("⚠️ 검증용 필수 도서 데이터베이스에는 없으나 일반 단행본 양식으로 변환합니다.")
-            st.info("입력하신 책이 일반 잡지나 주간지(ISSN)가 아닌 일반 단행본이 맞는지 국립중앙도서관에서 한 번 더 크로스체크해 주세요.")
-            
-            # 기본 나이스 규격 변환 꼴 제시
+            st.warning("⚠️ 검증용 필수 도서 데이터베이스에는 없으나 일반 단행본 양식으로 자동 변환합니다.")
             fallback_format = f"{book_query}(저자명)"
             fallback_data = [{
                 "나이스 입력 양식 (즉시 복사 가능)": fallback_format,
-                "정식 ISBN 번호": "단행본 여부 수동 확인 필요",
+                "정식 ISBN 번호": "위의 링크 버튼을 눌러 단행본(ISBN)인지 확인 필요",
                 "출판사": "확인 필요"
             }]
             st.dataframe(pd.DataFrame(fallback_data), use_container_width=True)
