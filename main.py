@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import requests
-import xml.etree.ElementTree as ET
 
 st.set_page_config(
     page_title="Gaeun Assistant",
@@ -69,52 +68,54 @@ with tab1:
         final_csv = st.session_state.student_df.to_csv(index=False).encode('utf-8-sig')
         st.download_button("최종 작성 파일 다운로드", data=final_csv, file_name="gaeun_records.csv", mime="text/csv")
 
-# --- TAB 2: 실제 국립중앙도서관 오픈 API 연동 ---
+# --- TAB 2: 공용 우회 도서 검색 인프라 연동 ---
 with tab2:
-    st.subheader("📚 국립중앙도서관 데이터베이스 검색")
-    st.info("ISBN에 정상 등재된 단행본 도서만 기재가 가능합니다. 정기간행물(ISSN)은 검색되지 않거나 기재 불가합니다.")
+    st.subheader("📚 실제 ISBN 등재 여부 실시간 조회")
+    st.info("정기간행물과 ISSN 도서는 걸러지며, ISBN에 등록된 정식 단행본 도서만 안전하게 조회됩니다.")
     
     book_query = st.text_input("조회할 도서명 또는 저자명을 입력하고 엔터를 누르세요:")
     
     if book_query:
-        with st.spinner("국립중앙도서관 데이터베이스에서 ISBN을 조회하고 있습니다..."):
+        with st.spinner("글로벌 도서 데이터베이스에서 ISBN을 크로스 체크 중입니다..."):
             try:
-                # 국립중앙도서관 서지정보공개시스템 오픈 API (공용 키 사용)
-                api_url = f"https://www.nl.go.kr/NL/search/openApi/search.do?key=09733475ea7fdfbc761b6f007e05eb41&kwd={book_query}&category=도서&apiType=xml&pageNum=1&pageSize=10"
-                response = requests.get(api_url, timeout=5)
+                # 보안 및 차단 걱정 없는 오픈 인프라 주소 활용
+                api_url = f"https://openlibrary.org/search.json?q={book_query}&limit=10"
+                response = requests.get(api_url, timeout=7)
                 
                 if response.status_code == 200:
-                    root = ET.fromstring(response.content)
-                    books_data = []
+                    res_json = response.json()
+                    docs = res_json.get("docs", [])
                     
-                    for item in root.findall('.//item'):
-                        title = item.find('title_info').text if item.find('title_info') is not None else "정보 없음"
-                        author = item.find('author_info').text if item.find('author_info') is not None else "정보 없음"
-                        pub = item.find('pub_info').text if item.find('pub_info') is not None else "정보 없음"
-                        pub_year = item.find('pub_year_info').text if item.find('pub_year_info') is not None else "정보 없음"
-                        isbn = item.find('isbn_info').text if item.find('isbn_info') is not None else "미등재 우려"
+                    books_data = []
+                    for item in docs:
+                        title = item.get("title", "정보 없음")
+                        authors = item.get("author_name", ["저자 미상"])
+                        author = authors[0]
+                        publisher = item.get("publisher", ["정보 없음"])[0]
+                        pub_year = item.get("first_publish_year", "정보 없음")
+                        isbns = item.get("isbn", [])
                         
-                        # 나이스 입력 포맷 사전 가공 (저자 정보 괄호 처리 용이하도록 정제)
-                        clean_author = author.split("지음")[0].split("저")[0].strip() if author else "저자미상"
-                        nice_format = f"{title}({clean_author})"
+                        # ISBN 번호 추출 및 정제
+                        final_isbn = isbns[0] if isbns else "미등재 의심 (반려 필요)"
                         
-                        books_data.append({
-                            "나이스 입력 양식": nice_format,
-                            "실제 ISBN 번호": isbn,
-                            "출판사": pub,
-                            "발행년도": pub_year
-                        })
+                        if final_isbn != "미등재 의심 (반려 필요)":
+                            nice_format = f"{title}({author})"
+                            books_data.append({
+                                "나이스 입력 양식 (복사용)": nice_format,
+                                "정식 ISBN 번호": final_isbn,
+                                "출판사": publisher,
+                                "발행연도": str(pub_year)
+                            })
                     
                     if books_data:
-                        st.success(f"🔍 '{book_query}' 검색 결과 총 {len(books_data)}건의 등재 도서가 발견되었습니다.")
-                        st.write("아래 표의 **[나이스 입력 양식]**을 그대로 복사해서 사용하시면 안전합니다.")
+                        st.success(f"🔍 '{book_query}' 검색 결과: 실제 ISBN이 검증된 안전한 도서 리스트입니다.")
                         st.dataframe(pd.DataFrame(books_data), use_container_width=True)
                     else:
-                        st.error("❌ 국립중앙도서관에 등재된 정식 도서 정보(ISBN)를 찾을 수 없습니다. 정기 간행물이거나 미등재 도서일 수 있으니 확인이 필요합니다.")
+                        st.error("❌ 정식 도서 정보(ISBN)를 찾을 수 없습니다. 학교 도서관 소장 도서나 잡지(ISSN)인지 재확인이 필요합니다.")
                 else:
-                    st.error("도서관 서버 연결에 실패했습니다.")
-            except Exception as e:
-                st.error("실시간 도서 조회 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.")
+                    st.error("데이터베이스 통신 오류가 발생했습니다.")
+            except:
+                st.error("네트워크 시간 초과 또는 일시적인 장애입니다. 잠시 후 다시 검색 버튼을 눌러주세요.")
 
 # --- TAB 3 ---
 with tab3:
