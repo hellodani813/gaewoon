@@ -27,22 +27,9 @@ SPELL_CHECK_DICT = {
     "조사 하여": "조사하여", "분석 하여": "분석하여", "생각 함": "생각함", "안음": "않음"
 }
 
-BOOK_DATABASE = [
-    {"title": "재밌어서 밤새는 화학 이야기", "author": "사마키 다케오", "isbn": "9788964472316", "pub": "더숲"},
-    {"title": "정재승의 과학 콘서트", "author": "정재승", "isbn": "9788937434501", "pub": "어크로스"},
-    {"title": "물리 외과 의사", "author": "최원석", "isbn": "9788994149547", "pub": "글담출판"},
-    {"title": "원소의 세계", "author": "존 엠슬리", "isbn": "9788932471372", "pub": "사이언스북스"},
-    {"title": "물질의 세계", "author": "자난 가오", "isbn": "9791191114225", "pub": "김영사"},
-    {"title": "코스모스", "author": "칼 세이건", "isbn": "9788937429217", "pub": "사이언스북스"},
-    {"title": "이기적 유전자", "author": "리처드 도킨스", "isbn": "9788932473901", "pub": "을유문화사"},
-    {"title": "사피엔스", "author": "유발 하라리", "isbn": "9788934972464", "pub": "김영사"},
-    {"title": "침묵의 봄", "author": "레이첼 카슨", "isbn": "9788932472485", "pub": "사이언스북스"},
-    {"title": "수학의 정석", "author": "홍성대", "isbn": "9788993133035", "pub": "성지출판"},
-    {"title": "수학 인문학으로 읽다", "author": "이광연", "isbn": "9788997091843", "pub": "지식프레임"},
-    {"title": "틀리지 않는 법", "author": "조던 엘렌버그", "isbn": "9788937432095", "pub": "열린책들"}
-]
 
-tab1, tab2, tab3 = st.tabs(["학생 명렬 및 행발 작성", "📚 실제 ISBN 도서 조회", "기재 금지어 검사"])
+
+tab1, tab2 = st.tabs(["학생 명렬 및 행발 작성", "기재 금지어 검사"])
 
 # --- TAB 1 ---
 with tab1:
@@ -82,46 +69,10 @@ with tab1:
         final_csv = st.session_state.student_df.to_csv(index=False).encode('utf-8-sig')
         st.download_button("최종 작성 파일 다운로드", data=final_csv, file_name="gaeun_records.csv", mime="text/csv")
 
-# --- TAB 2: 오류가 절대 없는 안전한 도서 조회 인터페이스 ---
-with tab2:
-    st.subheader("📚 도서 ISBN 검증 및 나이스 양식 변환")
-    st.info("💡 과학동아, 뉴턴(Newton) 같은 정기 간행물은 ISSN 체계이므로 생기부 입력이 절대 불가하며, ISBN 단행본만 가능합니다.")
-    
-    # [보완 기능] 국립중앙도서관 정식 조회 사이트 링크 연동 버튼
-    st.markdown("### 🔍 공식 서지정보(ISBN) 확인 사이트")
-    st.write("가장 정확한 등재 여부는 대한민국 공식 도서관 시스템에서 실시간으로 확인할 수 있습니다.")
-    st.link_button("🌐 국립중앙도서관 서지정보 시스템 바로가기", "https://seoji.nl.go.kr/landingPage")
-    
-    st.write("---")
-    st.markdown("### 📝 도서명 입력 및 서식 변환")
-    book_query = st.text_input("조회하거나 변환할 도서명 또는 저자명을 입력하세요:")
-    
-    if book_query:
-        results = []
-        for book in BOOK_DATABASE:
-            if book_query.lower() in book["title"].lower() or book_query.lower() in book["author"].lower():
-                nice_format = f"{book['title']}({book['author']})"
-                results.append({
-                    "나이스 입력 양식 (즉시 복사 가능)": nice_format,
-                    "정식 ISBN 번호": book["isbn"],
-                    "출판사": book["pub"]
-                })
-        
-        if results:
-            st.success(f"🔍 내부 데이터베이스에서 ISBN 정보 검증에 성공했습니다!")
-            st.dataframe(pd.DataFrame(results), use_container_width=True)
-        else:
-            st.warning("⚠️ 검증용 필수 도서 데이터베이스에는 없으나 일반 단행본 양식으로 자동 변환합니다.")
-            fallback_format = f"{book_query}(저자명)"
-            fallback_data = [{
-                "나이스 입력 양식 (즉시 복사 가능)": fallback_format,
-                "정식 ISBN 번호": "위의 링크 버튼을 눌러 단행본(ISBN)인지 확인 필요",
-                "출판사": "확인 필요"
-            }]
-            st.dataframe(pd.DataFrame(fallback_data), use_container_width=True)
 
-# --- TAB 3 ---
-with tab3:
+
+# --- TAB 2 ---
+with tab2:
     st.subheader("🚫 문장 전체 기재 금지어 및 규칙 검사기")
     st.warning("주의: 생성형 AI가 작성해 준 문장을 그대로 생기부에 복사하여 붙여넣는 행위는 절대 불가합니다.")
     check_text = st.text_area("검사할 문단을 복사(Ctrl+V)하여 붙여넣으세요:", height=180)
